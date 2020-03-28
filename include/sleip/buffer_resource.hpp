@@ -1,0 +1,8 @@
+#ifndef SLEIP_BUFFER_RESOURCE_HPP_
+#define SLEIP_BUFFER_RESOURCE_HPP_
+
+namespace sleip
+{
+}
+
+#endif // SLEIP_BUFFER_RESOURCE_HPP_

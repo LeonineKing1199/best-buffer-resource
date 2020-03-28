@@ -1,0 +1,7 @@
+.vscode/
+build*/
+toolchains/
+install/
+Testing/
+.clangd/
+compile_commands.json
