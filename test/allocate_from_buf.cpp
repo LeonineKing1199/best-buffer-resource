@@ -36,6 +36,7 @@ alloc_from_buf(void*             buf,
 {
   auto const origin = buf;
   auto       pos    = std::align(alignment, num_bytes, buf, capacity);
+  if (pos == nullptr) { throw std::bad_alloc{}; }
 
   auto end = reinterpret_cast<void*>(reinterpret_cast<std::uintptr_t>(pos) +
                                      round_up_aligned(num_bytes, alignment));
@@ -229,6 +230,71 @@ TEST_CASE("pointer, aligned origin, not aligned to free list node, no room for f
 
   CHECK(p.origin == origin);
   CHECK(p.pos == mem.data() + next_aligned);
+  CHECK(p.end == mem.data() + mem.size());
+  CHECK(capacity == 0);
+}
+
+TEST_CASE("throwing bad_alloc")
+{
+  static_assert(alignof(int) == 4);
+  static_assert(sizeof(int) == 4);
+  static_assert(alignof(free_list_node) == 8);
+
+  auto const offset = 4;
+  static_assert(offset % alignof(int) == 0);
+
+  auto const next_aligned = round_up_aligned(offset, alignof(int));
+  static_assert(next_aligned % alignof(int) == 0);
+
+  auto const num_bytes = sizeof(int) * 24;
+
+  auto mem = std::array<std::byte, 20>{};
+
+  auto* const origin = mem.data() + offset;
+
+  auto capacity = mem.size() - offset;
+
+  CHECK_THROWS_AS(alloc_from_buf(origin, num_bytes, alignof(int), capacity), std::bad_alloc);
+}
+
+TEST_CASE("char allocation unaligned to free_list_node, room for list node")
+{
+  static_assert(alignof(free_list_node) == 8);
+
+  auto const num_bytes = 70;
+
+  static_assert(num_bytes % alignof(free_list_node) > 0);
+
+  auto mem = std::array<std::byte, 100>{};
+
+  auto* const origin = mem.data();
+
+  auto capacity = mem.size();
+  auto p        = alloc_from_buf(origin, num_bytes, alignof(int), capacity);
+
+  CHECK(p.origin == origin);
+  CHECK(p.pos == mem.data());
+  CHECK(p.end == mem.data() + round_up_aligned(num_bytes, alignof(free_list_node)));
+  CHECK(capacity == mem.size() - num_bytes);
+}
+
+TEST_CASE("char allocation unaligned to free_list_node, no room for list node")
+{
+  static_assert(alignof(free_list_node) == 8);
+
+  auto const num_bytes = 73;
+
+  static_assert(num_bytes % alignof(free_list_node) > 0);
+
+  auto mem = std::array<std::byte, 100>{};
+
+  auto* const origin = mem.data();
+
+  auto capacity = mem.size();
+  auto p        = alloc_from_buf(origin, num_bytes, alignof(char), capacity);
+
+  CHECK(p.origin == origin);
+  CHECK(p.pos == mem.data());
   CHECK(p.end == mem.data() + mem.size());
   CHECK(capacity == 0);
 }
