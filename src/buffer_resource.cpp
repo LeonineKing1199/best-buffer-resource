@@ -1,8 +1,5 @@
 #include <sleip/buffer_resource.hpp>
 
-#include <memory>
-#include <cstdint>
-
 namespace sleip
 {
 namespace detail

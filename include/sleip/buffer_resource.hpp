@@ -1,6 +1,7 @@
 #ifndef SLEIP_BUFFER_RESOURCE_HPP_
 #define SLEIP_BUFFER_RESOURCE_HPP_
 
+#include <memory>
 #include <cstddef>
 
 namespace sleip
