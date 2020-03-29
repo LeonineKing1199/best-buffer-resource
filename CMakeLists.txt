@@ -20,16 +20,16 @@ find_package(Boost 1.72 REQUIRED)
 include(GNUInstallDirs)
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
-add_library(${PROJECT_NAME} INTERFACE)
+add_library(${PROJECT_NAME} src/buffer_resource.cpp)
 
 target_include_directories(
   ${PROJECT_NAME}
-  INTERFACE
+  PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}-${PROJECT_VERSION}>
 )
 
-target_link_libraries(${PROJECT_NAME} INTERFACE Boost::headers)
+target_link_libraries(${PROJECT_NAME} PUBLIC Boost::headers)
 
 include(CTest)
 if (BUILD_TESTING)
