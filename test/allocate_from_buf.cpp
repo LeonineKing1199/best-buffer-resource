@@ -3,21 +3,22 @@
 #include <cstdint>
 #include <array>
 
-#define CATCH_CONFIG_MAIN
-#include <catch2/catch.hpp>
+#include <boost/core/lightweight_test.hpp>
 
-TEST_CASE("round_up_aligned")
+void
+test_round_up_aligned()
 {
-  CHECK(sleip::detail::round_up_aligned(9, 4) == 12);
-  CHECK(sleip::detail::round_up_aligned(13, 4) == 16);
-  CHECK(sleip::detail::round_up_aligned(12, 4) == 12);
-  CHECK(sleip::detail::round_up_aligned(13, 1) == 13);
-  CHECK(sleip::detail::round_up_aligned(8, 8) == 8);
-  CHECK(sleip::detail::round_up_aligned(16, 32) == 32);
-  CHECK(sleip::detail::round_up_aligned(16, 512) == 512);
+  BOOST_TEST_EQ(sleip::detail::round_up_aligned(9, 4), 12);
+  BOOST_TEST_EQ(sleip::detail::round_up_aligned(13, 4), 16);
+  BOOST_TEST_EQ(sleip::detail::round_up_aligned(12, 4), 12);
+  BOOST_TEST_EQ(sleip::detail::round_up_aligned(13, 1), 13);
+  BOOST_TEST_EQ(sleip::detail::round_up_aligned(8, 8), 8);
+  BOOST_TEST_EQ(sleip::detail::round_up_aligned(16, 32), 32);
+  BOOST_TEST_EQ(sleip::detail::round_up_aligned(16, 512), 512);
 }
 
-TEST_CASE("pointer, mis-aligned origin, not aligned to free_list_node, sufficient space")
+void
+test_pointer_misaligned_origin_not_aligned_to_free_list_node_sufficient_space()
 {
   static_assert(alignof(int) == 4);
   static_assert(sizeof(int) == 4);
@@ -38,17 +39,19 @@ TEST_CASE("pointer, mis-aligned origin, not aligned to free_list_node, sufficien
   auto capacity = mem.size() - offset;
   auto p        = sleip::detail::alloc_from_buf(origin, num_bytes, alignof(int), capacity);
 
-  CHECK(p.origin == origin);
-  CHECK(p.pos == mem.data() + next_aligned);
-  CHECK(p.end == mem.data() + sleip::detail::round_up_aligned(
-                                next_aligned + num_bytes, alignof(sleip::detail::free_list_node)));
-  CHECK(p.end != mem.data() + next_aligned + num_bytes);
-  CHECK(capacity ==
-        mem.size() - sleip::detail::round_up_aligned(next_aligned + num_bytes,
-                                                     alignof(sleip::detail::free_list_node)));
+  BOOST_TEST_EQ(p.origin, origin);
+  BOOST_TEST_EQ(p.pos, mem.data() + next_aligned);
+  BOOST_TEST_EQ(p.end, mem.data() +
+                         sleip::detail::round_up_aligned(next_aligned + num_bytes,
+                                                         alignof(sleip::detail::free_list_node)));
+  BOOST_TEST_NE(p.end, mem.data() + next_aligned + num_bytes);
+  BOOST_TEST_EQ(
+    capacity, mem.size() - sleip::detail::round_up_aligned(next_aligned + num_bytes,
+                                                           alignof(sleip::detail::free_list_node)));
 }
 
-TEST_CASE("pointer, mis-aligned origin, aligned to free_list_node, sufficient space")
+void
+test_pointer_misaligned_origin_aligned_to_free_list_node_sufficient_space()
 {
   static_assert(alignof(double) == 8);
   static_assert(sizeof(double) == 8);
@@ -69,15 +72,17 @@ TEST_CASE("pointer, mis-aligned origin, aligned to free_list_node, sufficient sp
   auto capacity = mem.size() - offset;
   auto p        = sleip::detail::alloc_from_buf(origin, num_bytes, alignof(double), capacity);
 
-  CHECK(p.origin == origin);
-  CHECK(p.pos == mem.data() + next_aligned);
-  CHECK(p.end == mem.data() + sleip::detail::round_up_aligned(
-                                next_aligned + num_bytes, alignof(sleip::detail::free_list_node)));
-  CHECK(p.end == mem.data() + next_aligned + num_bytes);
-  CHECK(capacity == mem.size() - next_aligned - num_bytes);
+  BOOST_TEST_EQ(p.origin, origin);
+  BOOST_TEST_EQ(p.pos, mem.data() + next_aligned);
+  BOOST_TEST_EQ(p.end, mem.data() +
+                         sleip::detail::round_up_aligned(next_aligned + num_bytes,
+                                                         alignof(sleip::detail::free_list_node)));
+  BOOST_TEST_EQ(p.end, mem.data() + next_aligned + num_bytes);
+  BOOST_TEST_EQ(capacity, mem.size() - next_aligned - num_bytes);
 }
 
-TEST_CASE("pointer, aligned origin, not aligned to free list node, sufficient capacity")
+void
+test_pointer_aligned_oiring_not_aligned_to_free_list_node_sufficient_capacity()
 {
   static_assert(alignof(int) == 4);
   static_assert(sizeof(int) == 4);
@@ -98,17 +103,19 @@ TEST_CASE("pointer, aligned origin, not aligned to free list node, sufficient ca
   auto capacity = mem.size() - offset;
   auto p        = sleip::detail::alloc_from_buf(origin, num_bytes, alignof(int), capacity);
 
-  CHECK(p.origin == origin);
-  CHECK(p.pos == mem.data() + next_aligned);
-  CHECK(p.end == mem.data() + sleip::detail::round_up_aligned(
-                                next_aligned + num_bytes, alignof(sleip::detail::free_list_node)));
-  CHECK(p.end != mem.data() + next_aligned + num_bytes);
-  CHECK(capacity ==
-        mem.size() - sleip::detail::round_up_aligned(next_aligned + num_bytes,
-                                                     alignof(sleip::detail::free_list_node)));
+  BOOST_TEST_EQ(p.origin, origin);
+  BOOST_TEST_EQ(p.pos, mem.data() + next_aligned);
+  BOOST_TEST_EQ(p.end, mem.data() +
+                         sleip::detail::round_up_aligned(next_aligned + num_bytes,
+                                                         alignof(sleip::detail::free_list_node)));
+  BOOST_TEST_NE(p.end, mem.data() + next_aligned + num_bytes);
+  BOOST_TEST_EQ(
+    capacity, mem.size() - sleip::detail::round_up_aligned(next_aligned + num_bytes,
+                                                           alignof(sleip::detail::free_list_node)));
 }
 
-TEST_CASE("pointer, aligned origin, aligned to free list node, sufficient capacity")
+void
+test_pointer_aligned_origin_aligned_to_free_list_node_sufficient_capacity()
 {
   static_assert(alignof(double) == 8);
   static_assert(sizeof(double) == 8);
@@ -129,15 +136,17 @@ TEST_CASE("pointer, aligned origin, aligned to free list node, sufficient capaci
   auto capacity = mem.size() - offset;
   auto p        = sleip::detail::alloc_from_buf(origin, num_bytes, alignof(double), capacity);
 
-  CHECK(p.origin == origin);
-  CHECK(p.pos == mem.data() + next_aligned);
-  CHECK(p.end == mem.data() + sleip::detail::round_up_aligned(
-                                next_aligned + num_bytes, alignof(sleip::detail::free_list_node)));
-  CHECK(p.end == mem.data() + next_aligned + num_bytes);
-  CHECK(capacity == mem.size() - next_aligned - num_bytes);
+  BOOST_TEST_EQ(p.origin, origin);
+  BOOST_TEST_EQ(p.pos, mem.data() + next_aligned);
+  BOOST_TEST_EQ(p.end, mem.data() +
+                         sleip::detail::round_up_aligned(next_aligned + num_bytes,
+                                                         alignof(sleip::detail::free_list_node)));
+  BOOST_TEST_EQ(p.end, mem.data() + next_aligned + num_bytes);
+  BOOST_TEST_EQ(capacity, mem.size() - next_aligned - num_bytes);
 }
 
-TEST_CASE("pointer, aligned origin, not aligned to free list node, use full capacity")
+void
+test_pointer_aligned_origin_not_aligned_to_free_list_node_use_full_capacity()
 {
   static_assert(alignof(int) == 4);
   static_assert(sizeof(int) == 4);
@@ -158,13 +167,14 @@ TEST_CASE("pointer, aligned origin, not aligned to free list node, use full capa
   auto capacity = mem.size() - offset;
   auto p        = sleip::detail::alloc_from_buf(origin, num_bytes, alignof(int), capacity);
 
-  CHECK(p.origin == origin);
-  CHECK(p.pos == mem.data() + next_aligned);
-  CHECK(p.end == mem.data() + mem.size());
-  CHECK(capacity == 0);
+  BOOST_TEST_EQ(p.origin, origin);
+  BOOST_TEST_EQ(p.pos, mem.data() + next_aligned);
+  BOOST_TEST_EQ(p.end, mem.data() + mem.size());
+  BOOST_TEST_EQ(capacity, 0);
 }
 
-TEST_CASE("pointer, aligned origin, not aligned to free list node, no room for free list node")
+void
+test_pointer_aligned_origin_not_aligned_to_free_list_node_no_froom_for_free_list_node()
 {
   static_assert(alignof(int) == 4);
   static_assert(sizeof(int) == 4);
@@ -185,13 +195,14 @@ TEST_CASE("pointer, aligned origin, not aligned to free list node, no room for f
   auto capacity = mem.size() - offset;
   auto p        = sleip::detail::alloc_from_buf(origin, num_bytes, alignof(int), capacity);
 
-  CHECK(p.origin == origin);
-  CHECK(p.pos == mem.data() + next_aligned);
-  CHECK(p.end == mem.data() + mem.size());
-  CHECK(capacity == 0);
+  BOOST_TEST_EQ(p.origin, origin);
+  BOOST_TEST_EQ(p.pos, mem.data() + next_aligned);
+  BOOST_TEST_EQ(p.end, mem.data() + mem.size());
+  BOOST_TEST_EQ(capacity, 0);
 }
 
-TEST_CASE("throwing bad_alloc")
+void
+test_throwing_bad_alloc()
 {
   static_assert(alignof(int) == 4);
   static_assert(sizeof(int) == 4);
@@ -211,11 +222,12 @@ TEST_CASE("throwing bad_alloc")
 
   auto capacity = mem.size() - offset;
 
-  CHECK_THROWS_AS(sleip::detail::alloc_from_buf(origin, num_bytes, alignof(int), capacity),
-                  std::bad_alloc);
+  BOOST_TEST_THROWS(sleip::detail::alloc_from_buf(origin, num_bytes, alignof(int), capacity),
+                    std::bad_alloc);
 }
 
-TEST_CASE("char allocation unaligned to free_list_node, room for list node")
+void
+test_char_allocation_unaligned_to_free_list_node_with_room_for_list_node()
 {
   static_assert(alignof(sleip::detail::free_list_node) == 8);
 
@@ -230,14 +242,15 @@ TEST_CASE("char allocation unaligned to free_list_node, room for list node")
   auto capacity = mem.size();
   auto p        = sleip::detail::alloc_from_buf(origin, num_bytes, alignof(int), capacity);
 
-  CHECK(p.origin == origin);
-  CHECK(p.pos == mem.data());
-  CHECK(p.end == mem.data() + sleip::detail::round_up_aligned(
-                                num_bytes, alignof(sleip::detail::free_list_node)));
-  CHECK(capacity == mem.size() - num_bytes);
+  BOOST_TEST_EQ(p.origin, origin);
+  BOOST_TEST_EQ(p.pos, mem.data());
+  BOOST_TEST_EQ(p.end, mem.data() + sleip::detail::round_up_aligned(
+                                      num_bytes, alignof(sleip::detail::free_list_node)));
+  BOOST_TEST_EQ(capacity, mem.size() - num_bytes);
 }
 
-TEST_CASE("char allocation unaligned to free_list_node, no room for list node")
+void
+test_char_allocation_unaligned_to_free_list_node_with_no_room_for_list_node()
 {
   static_assert(alignof(sleip::detail::free_list_node) == 8);
 
@@ -252,8 +265,25 @@ TEST_CASE("char allocation unaligned to free_list_node, no room for list node")
   auto capacity = mem.size();
   auto p        = sleip::detail::alloc_from_buf(origin, num_bytes, alignof(char), capacity);
 
-  CHECK(p.origin == origin);
-  CHECK(p.pos == mem.data());
-  CHECK(p.end == mem.data() + mem.size());
-  CHECK(capacity == 0);
+  BOOST_TEST_EQ(p.origin, origin);
+  BOOST_TEST_EQ(p.pos, mem.data());
+  BOOST_TEST_EQ(p.end, mem.data() + mem.size());
+  BOOST_TEST_EQ(capacity, 0);
+}
+
+int
+main()
+{
+  test_round_up_aligned();
+  test_pointer_misaligned_origin_not_aligned_to_free_list_node_sufficient_space();
+  test_pointer_misaligned_origin_aligned_to_free_list_node_sufficient_space();
+  test_pointer_aligned_oiring_not_aligned_to_free_list_node_sufficient_capacity();
+  test_pointer_aligned_origin_aligned_to_free_list_node_sufficient_capacity();
+  test_pointer_aligned_origin_not_aligned_to_free_list_node_use_full_capacity();
+  test_pointer_aligned_origin_not_aligned_to_free_list_node_no_froom_for_free_list_node();
+  test_throwing_bad_alloc();
+  test_char_allocation_unaligned_to_free_list_node_with_room_for_list_node();
+  test_char_allocation_unaligned_to_free_list_node_with_no_room_for_list_node();
+
+  return boost::report_errors();
 }

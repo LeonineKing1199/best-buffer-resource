@@ -33,10 +33,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC Boost::headers)
 
 include(CTest)
 if (BUILD_TESTING)
-  find_package(Catch2 CONFIG REQUIRED)
-  include(Catch)
   include("cmake/SleipAddTest.cmake")
-
   add_subdirectory(test)
 endif()
 
