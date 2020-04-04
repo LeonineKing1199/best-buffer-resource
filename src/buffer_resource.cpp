@@ -14,18 +14,23 @@ alloc_from_buf(void*             buf,
   auto       pos    = std::align(alignment, num_bytes, buf, capacity);
   if (pos == nullptr) { throw std::bad_alloc{}; }
 
-  auto end = reinterpret_cast<void*>(reinterpret_cast<std::uintptr_t>(pos) +
-                                     round_up_aligned(num_bytes, alignment));
+  auto const true_num_bytes = round_up_aligned(num_bytes, alignment);
+  auto const end = reinterpret_cast<void*>(reinterpret_cast<std::uintptr_t>(pos) + true_num_bytes);
 
-  capacity -= num_bytes;
+  capacity -= true_num_bytes;
   if (capacity == 0) { return {origin, pos, end}; }
 
-  end = std::align(alignof(free_list_node), sizeof(free_list_node), end, capacity);
-  if (end == nullptr) {
-    end = reinterpret_cast<void*>(reinterpret_cast<std::uintptr_t>(pos) +
-                                  round_up_aligned(num_bytes, alignment) + capacity);
+  auto alloc_end      = end;
+  auto alloc_capacity = capacity;
 
+  alloc_end =
+    std::align(alignof(free_list_node), sizeof(free_list_node), alloc_end, alloc_capacity);
+
+  if (alloc_end == nullptr) {
     capacity = 0;
+    return {origin, pos,
+            reinterpret_cast<void*>(reinterpret_cast<std::uintptr_t>(pos) + true_num_bytes +
+                                    alloc_capacity)};
   }
 
   return {origin, pos, end};

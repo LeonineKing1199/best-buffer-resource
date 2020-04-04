@@ -1,9 +1,15 @@
-#include <cstdint>
 #include <sleip/buffer_resource.hpp>
 
+#include <cstdint>
 #include <array>
 
 #include <boost/core/lightweight_test.hpp>
+
+auto
+inc_void_ptr(void* const ptr, std::size_t const offset)
+{
+  return reinterpret_cast<void*>(reinterpret_cast<std::size_t>(ptr) + offset);
+}
 
 auto
 alloc_from_list_node(std::size_t const               num_bytes,
@@ -17,10 +23,16 @@ alloc_from_list_node(std::size_t const               num_bytes,
 
   auto ptr = sleip::detail::alloc_from_buf(node.origin, num_bytes, alignment, capacity);
 
-  free_node = ::new (ptr.end) sleip::detail::free_list_node{
-    reinterpret_cast<void*>(reinterpret_cast<std::uintptr_t>(ptr.pos) + num_bytes), capacity,
-    node.next};
+  if (ptr.end == inc_void_ptr(node.origin, node.capacity)) {
+    free_node = node.next;
+    return ptr;
+  }
 
+  auto node_pos = ptr.end;
+  node_pos      = std::align(alignof(sleip::detail::free_list_node),
+                        sizeof(sleip::detail::free_list_node), node_pos, capacity);
+
+  free_node = ::new (node_pos) sleip::detail::free_list_node{ptr.end, capacity, node.next};
   return ptr;
 }
 
@@ -45,8 +57,11 @@ test_allocation_from_free_list_node()
 
   BOOST_TEST_EQ(ptr.origin, mem.data());
   BOOST_TEST_EQ(ptr.pos, mem.data());
-  BOOST_TEST_EQ(ptr.end, mem.data() + sleip::detail::round_up_aligned(
-                                        num_bytes, alignof(sleip::detail::free_list_node)));
+  BOOST_TEST_EQ(ptr.end, mem.data() + num_bytes);
+
+  BOOST_TEST_EQ(inc_void_ptr(ptr.pos, num_bytes), ptr.end);
+  BOOST_TEST_NE(inc_void_ptr(ptr.pos, num_bytes), static_cast<void*>(list));
+  BOOST_TEST_NE(ptr.end, static_cast<void*>(list));
 
   BOOST_TEST_EQ(list->origin,
                 reinterpret_cast<void*>(reinterpret_cast<std::uintptr_t>(ptr.pos) + num_bytes));
